@@ -1,0 +1,94 @@
+version: 1
+objects:
+  - id: database:shop
+    kind: database
+    name: shop
+    description: Example warehouse. All names and SQL are synthetic.
+  - id: table:orders
+    kind: table
+    name: orders
+    parent_id: database:shop
+    source: shop.orders
+    description: Orders placed by customers, including internal test orders.
+    grain:
+      description: One row per order_id.
+    required_filters: [orders.is_test = false]
+  - id: table:customers
+    kind: table
+    name: customers
+    parent_id: database:shop
+    source: shop.customers
+    description: Current customer record.
+    grain:
+      description: One row per customer_id.
+  - id: column:orders.order_id
+    kind: column
+    name: order_id
+    parent_id: table:orders
+    data_type: bigint
+  - id: column:orders.customer_id
+    kind: column
+    name: customer_id
+    parent_id: table:orders
+    data_type: bigint
+  - id: column:orders.is_test
+    kind: column
+    name: is_test
+    parent_id: table:orders
+    data_type: boolean
+  - id: column:customers.customer_id
+    kind: column
+    name: customer_id
+    parent_id: table:customers
+    data_type: bigint
+  - id: join:orders-customers
+    kind: join
+    name: Orders belong to customers
+    left: [column:orders.customer_id]
+    right: [column:customers.customer_id]
+    predicate: orders.customer_id = customers.customer_id
+    cardinality: many-to-one
+    required_filters: [orders.is_test = false]
+    grain_effect: Preserves the order grain when customer_id is unique in customers.
+  - id: entity:customer
+    kind: entity
+    name: Customer
+    description: A person or organization that places orders.
+    bindings: [table:customers]
+    identifier_ids: [column:customers.customer_id]
+  - id: entity:order
+    kind: entity
+    name: Order
+    bindings: [table:orders]
+    identifier_ids: [column:orders.order_id]
+  - id: property:customer.id
+    kind: property
+    name: Customer identifier
+    parent_id: entity:customer
+    bindings: [column:customers.customer_id]
+    data_type: bigint
+  - id: relation:customer-orders
+    kind: relation
+    name: Customer places orders
+    from_id: entity:customer
+    to_id: entity:order
+    cardinality: one-to-many
+    bindings: [join:orders-customers]
+  - id: doctrine:orders
+    kind: doctrine
+    name: Counting customer orders
+    content: Exclude internal test orders. Count orders at the order grain. Use customer_id to join current customers; do not join on display names.
+    object_ids: [table:orders, table:customers, join:orders-customers]
+  - id: gold_query:orders-by-customer
+    kind: gold_query
+    name: Orders by customer
+    question: How many real orders did each customer place?
+    dialect: duckdb
+    sql: |
+      SELECT customers.customer_id, COUNT(*) AS order_count
+      FROM shop.orders AS orders
+      JOIN shop.customers AS customers
+        ON orders.customer_id = customers.customer_id
+      WHERE orders.is_test = false
+      GROUP BY customers.customer_id
+    object_ids: [table:orders, table:customers, join:orders-customers]

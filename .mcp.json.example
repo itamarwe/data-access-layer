@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "dal": {
+      "command": "dal",
+      "args": ["--repository", "/absolute/path/to/context", "mcp"]
+    }
+  }
+}

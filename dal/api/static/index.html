@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#F7F8F4" />
+    <title>DAL context ledger</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#workspace">Skip to workspace</a>
+    <header class="topbar">
+      <a class="wordmark" href="/search" data-route="search" aria-label="DAL context ledger home">
+        <span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span><strong>DAL</strong><small>Context ledger</small></span>
+      </a>
+      <div class="revision" id="revision">Reading revision…</div>
+      <button class="quiet-button" id="access-token" type="button">Set access token</button>
+    </header>
+    <div class="ledger-shell">
+      <nav class="task-rail" aria-label="Primary">
+        <p class="rail-heading">Work</p>
+        <a href="/search" data-route="search">Search <kbd>/</kbd></a>
+        <a href="/catalog" data-route="catalog">Catalog</a>
+        <a href="/curation" data-route="curation">Curation</a>
+        <a href="/doctrine" data-route="doctrine">Doctrine</a>
+        <a href="/gold-queries" data-route="gold-queries">Gold queries</a>
+        <a href="/health" data-route="health">Health</a>
+        <div class="rail-note">
+          <span class="ledger-dot"></span>
+          Files are canonical.<br />Git records the history.
+        </div>
+      </nav>
+      <main id="workspace" class="workspace" tabindex="-1"></main>
+      <aside id="evidence-rail" class="evidence-rail" aria-label="Evidence and next steps"></aside>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/assets/app.js"></script>
+  </body>
+</html>

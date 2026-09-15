@@ -1,0 +1,44 @@
+[project]
+name = "dal-context-graph"
+version = "0.2.0"
+description = "A file-based context graph for agents: native CLI, REST API, UI, and MCP."
+requires-python = ">=3.11"
+dependencies = [
+    "boto3>=1.34",
+    "sqlglot>=25.0",
+    "duckdb>=1.1",
+    "mcp>=1.2",
+    "PyYAML>=6.0,<7",
+    "fastapi>=0.115,<1",
+    "uvicorn>=0.32,<1",
+]
+
+[project.scripts]
+dal = "dal.cli.main:main"
+dal-server = "dal.api.server:main"
+dal-mcp = "dal.mcp:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "httpx>=0.27", "build>=1"]
+embeddings = [
+    "fastembed>=0.7,<1",
+    "numpy>=1.26",
+    "usearch>=2.20,<3",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["dal*"]
+
+[tool.setuptools.package-data]
+"dal.api" = ["static/*", "static/assets/*", "static/assets/lib/*", "static/assets/views/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "evals"]
+pythonpath = ["."]
+addopts = "-q"
+markers = ["eval: offline evaluation suites"]

@@ -1,0 +1,69 @@
+{
+  "format": "dal.benchmark-cases.v1",
+  "name": "synthetic-library-context-retrieval",
+  "source": {
+    "split": "development",
+    "artifact": "synthetic_catalog.py",
+    "synthetic": true,
+    "method": "Invented library schema, methodology, and snapshot date. Source references identify objects in synthetic_document(). No production data is used.",
+    "evaluation_type": "retrieval_regression"
+  },
+  "gate": {
+    "minimum_success_at_budget_rate": 1.0,
+    "minimum_mean_recall": 1.0,
+    "maximum_mean_turns": 1.0,
+    "maximum_mean_tokens": 1600.0
+  },
+  "cases": [
+    {
+      "case_id": "ontology-member-identity",
+      "category": "ontology",
+      "question": "What identifies a library member and which columns carry the member identifier?",
+      "expected_object_ids": ["entity:member", "column:members.member_id", "column:loans.member_id"],
+      "max_turns": 1,
+      "max_tokens": 1600,
+      "source_refs": ["synthetic_catalog.py#entity:member", "synthetic_catalog.py#column:members.member_id", "synthetic_catalog.py#column:loans.member_id"],
+      "evaluable": true
+    },
+    {
+      "case_id": "relation-loan-member",
+      "category": "relation",
+      "question": "How do library loans join to the borrowing members?",
+      "expected_object_ids": ["join:loan-member", "column:loans.member_id", "column:members.member_id"],
+      "max_turns": 1,
+      "max_tokens": 1600,
+      "source_refs": ["synthetic_catalog.py#join:loan-member", "synthetic_catalog.py#column:loans.member_id", "synthetic_catalog.py#column:members.member_id"],
+      "evaluable": true
+    },
+    {
+      "case_id": "how-to-query-active-loans",
+      "category": "how_to_query",
+      "question": "How should I filter loan status when counting currently borrowed books?",
+      "expected_object_ids": ["doctrine:active-loans", "column:loans.status"],
+      "max_turns": 1,
+      "max_tokens": 1600,
+      "source_refs": ["synthetic_catalog.py#doctrine:active-loans", "synthetic_catalog.py#column:loans.status"],
+      "evaluable": true
+    },
+    {
+      "case_id": "freshness-loans",
+      "category": "freshness",
+      "question": "What snapshot information is available for library loans?",
+      "expected_object_ids": ["table:loans"],
+      "max_turns": 1,
+      "max_tokens": 1600,
+      "source_refs": ["synthetic_catalog.py#table:loans"],
+      "evaluable": true
+    },
+    {
+      "case_id": "next-step-book-title",
+      "category": "next_step",
+      "question": "I have a book identifier. What should I inspect next to find its title?",
+      "expected_object_ids": ["table:books", "column:books.title"],
+      "max_turns": 1,
+      "max_tokens": 1600,
+      "source_refs": ["synthetic_catalog.py#table:books", "synthetic_catalog.py#column:books.title"],
+      "evaluable": true
+    }
+  ]
+}

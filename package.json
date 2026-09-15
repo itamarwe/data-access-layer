@@ -1,0 +1,8 @@
+{
+  "name": "dal-context-graph",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix web run build",
+    "dev": "python -m dal.cli --repository examples/shop serve"
+  }
+}
