@@ -5,12 +5,15 @@ from __future__ import annotations
 import json
 import math
 import re
+from datetime import datetime
+from functools import cached_property
 from collections.abc import Iterable
 from pathlib import Path
 
 import duckdb
 
 from dal.database import read_only_connection
+from dal.availability import join_dependency_failures, unavailable_from_claims
 
 from .models import CatalogObject, EvidenceSummary
 
@@ -74,17 +77,23 @@ class BundleCatalog:
         return (_json(row[0]) if row else
                 {"status": "unavailable", "reason": "embedding_metadata_missing"})
 
-    def list_objects(self, kind: str, limit: int, offset: int, include_deprecated: bool = False) -> tuple[CatalogObject, ...]:
+    def list_objects(self, kind: str, limit: int, offset: int, include_deprecated: bool = False,
+                     parent_id: str | None = None, referenced_object_id: str | None = None) -> tuple[CatalogObject, ...]:
         with self._open() as connection:
             rows = connection.execute(
                 "SELECT id, kind, name, parent_id, source, payload FROM objects "
                 "WHERE kind = ? AND (? OR coalesce(json_extract_string(payload, '$.status'), 'published') != 'deprecated') "
+                "AND (? IS NULL OR parent_id = ?) "
+                "AND (? IS NULL OR json_contains(json_extract(payload, '$.object_ids'), to_json(CAST(? AS VARCHAR)))) "
+                "AND id NOT IN (SELECT UNNEST(?)) "
                 "ORDER BY lower(name), id LIMIT ? OFFSET ?",
-                [kind, include_deprecated, limit, offset],
+                [kind, include_deprecated, parent_id, parent_id, referenced_object_id, referenced_object_id, list(self.blocked_joins), limit, offset],
             ).fetchall()
         return tuple(_object(row) for row in rows)
 
     def get_object(self, object_id: str, kind: str | None = None) -> CatalogObject | None:
+        if object_id in self.blocked_joins:
+            return None
         condition = "id = ?" + (" AND kind = ?" if kind else "")
         parameters = [object_id, *([kind] if kind else [])]
         with self._open() as connection:
@@ -94,13 +103,14 @@ class BundleCatalog:
             ).fetchone()
         return _object(row) if row else None
 
-    def bm25(self, terms: tuple[str, ...], limit: int, kind: str | None) -> dict[str, float]:
+    def bm25(self, terms: tuple[str, ...], limit: int, kind: str | None, parent_id: str | None = None) -> dict[str, float]:
         if not terms:
             return {}
         kind_clause = " AND o.kind = ?" if kind else ""
         parameters: list[object] = [list(terms)]
         if kind:
             parameters.append(kind)
+        parameters.extend([parent_id, parent_id, list(self.blocked_joins)])
         with self._open() as connection:
             rows = connection.execute(
                 "SELECT t.object_id, t.frequency, b.document_frequency, c.document_count, "
@@ -109,7 +119,8 @@ class BundleCatalog:
                 "JOIN bm25_terms b USING (term) CROSS JOIN bm25_corpus c "
                 "JOIN (SELECT object_id, sum(frequency) length FROM terms GROUP BY object_id) "
                 "lengths ON lengths.object_id = t.object_id "
-                "WHERE t.term IN (SELECT UNNEST(?))" + kind_clause,
+                "WHERE t.term IN (SELECT UNNEST(?))" + kind_clause +
+                " AND (? IS NULL OR o.parent_id = ?) AND o.id NOT IN (SELECT UNNEST(?))",
                 parameters,
             ).fetchall()
         scores: dict[str, float] = {}
@@ -123,7 +134,7 @@ class BundleCatalog:
         return dict(sorted(scores.items(), key=lambda item: (-item[1], item[0]))[:limit])
 
     def objects(self, object_ids: Iterable[str]) -> dict[str, CatalogObject]:
-        identifiers = tuple(dict.fromkeys(object_ids))
+        identifiers = tuple(value for value in dict.fromkeys(object_ids) if value not in self.blocked_joins)
         if not identifiers:
             return {}
         with self._open() as connection:
@@ -134,10 +145,10 @@ class BundleCatalog:
         return {item.id: item for item in map(_object, rows)}
 
     def embedding_index(
-        self, kind: str | None = None,
+        self, kind: str | None = None, parent_id: str | None = None,
     ) -> tuple[dict[str, tuple[float, ...]], str]:
-        kind_clause = " WHERE o.kind = ?" if kind else ""
-        parameters = [kind] if kind else []
+        kind_clause = " WHERE (? IS NULL OR o.kind = ?) AND (? IS NULL OR o.parent_id = ?) AND o.id NOT IN (SELECT UNNEST(?))"
+        parameters = [kind, kind, parent_id, parent_id, list(self.blocked_joins)]
         with self._open() as connection:
             if not _has_table(connection, "embeddings"):
                 return {}, "missing"
@@ -180,15 +191,15 @@ class BundleCatalog:
         return result
 
 
-    def evidence(self, object_ids: Iterable[str], limit: int) -> tuple[EvidenceSummary, ...]:
+    def evidence(self, object_ids: Iterable[str], limit: int, claim_path: str | None = None) -> tuple[EvidenceSummary, ...]:
         identifiers = tuple(object_ids)
         if not identifiers or limit == 0:
             return ()
         with self._open() as connection:
             rows = connection.execute(
                 "SELECT id, layer, subject_id, claim_path, source_kind, payload FROM evidence "
-                "WHERE subject_id IN (SELECT UNNEST(?)) ORDER BY layer, id LIMIT ?",
-                [list(identifiers), limit],
+                "WHERE subject_id IN (SELECT UNNEST(?)) AND (? IS NULL OR claim_path = ?) ORDER BY layer, id LIMIT ?",
+                [list(identifiers), claim_path, claim_path, limit],
             ).fetchall()
         result = []
         for row in rows:
@@ -200,6 +211,21 @@ class BundleCatalog:
                 value.get("content"), value.get("measurement"),
             ))
         return tuple(result)
+
+    @cached_property
+    def blocked_joins(self):
+        with self._open() as connection:
+            resources = [_json(row[0]) for row in connection.execute(
+                "SELECT payload FROM objects WHERE kind IN ('table', 'column', 'join')"
+            ).fetchall()]
+            claims = [_json(row[0]) for row in connection.execute(
+                "SELECT payload FROM evidence WHERE layer = 'physical' AND claim_path = '/exists'"
+            ).fetchall()]
+        unavailable = unavailable_from_claims(
+            (item["subject_id"], datetime.fromisoformat(item["collected_at"].replace("Z", "+00:00")), item["claim_value"])
+            for item in claims
+        )
+        return join_dependency_failures(resources, unavailable)
 
     def _open(self):
         return read_only_connection(self.database)

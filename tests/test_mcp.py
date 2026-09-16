@@ -27,4 +27,5 @@ def test_mcp_tool_contract_and_shared_lookup(tmp_path):
     import json
     blocks = result.content if hasattr(result, "content") else result[0] if isinstance(result, tuple) else result
     value = json.loads(blocks[0].text)
-    assert value == asdict(catalog.get("table", "table:orders"))
+    assert value == {**asdict(catalog.get("table", "table:orders")), "columns": [],
+                     "columns_page": {"limit": 20, "offset": 0, "has_more": False}, "next_commands": []}

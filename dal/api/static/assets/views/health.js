@@ -1,13 +1,14 @@
 import { api } from "../lib/api.js";
 import { escapeHtml, failure, loading } from "../lib/html.js";
 
-export async function renderHealth(main, rail) {
+export async function renderHealth(main, rail, signal) {
   main.innerHTML = `<header class="view-heading"><p>Health</p><h1>Know what needs attention</h1>
     <span>Failures block trust. Gaps identify context that can be improved without pretending the build failed.</span></header>
     <div id="health-output">${loading("Inspecting authored files and bundle")}</div>`;
   rail.innerHTML = `<div class="rail-section"><h2>Recovery</h2><p>Every issue includes one concrete command that moves the repository toward health.</p></div>`;
   try {
-    const result = await api("/health");
+    const result = await api("/health", { signal });
+    if (signal?.aborted) return;
     main.querySelector("#health-output").innerHTML = `<div class="health-summary ${result.healthy ? "healthy" : "unhealthy"}">
       <span>${result.healthy ? "Operational" : "Attention required"}</span><strong>${result.failures.length}</strong><small>failures</small>
       <strong>${result.gaps.length}</strong><small>knowledge gaps</small></div>
@@ -16,7 +17,7 @@ export async function renderHealth(main, rail) {
           <span>${check.performed ? "Checked" : "Not checked"}</span><p>${escapeHtml(check.reason || "")}</p></article>`).join("")}</section>
       ${issues("Failures", result.failures)}${issues("Knowledge gaps", result.gaps)}`;
   } catch (error) {
-    main.querySelector("#health-output").innerHTML = failure(error);
+    if (!signal?.aborted) main.querySelector("#health-output").innerHTML = failure(error);
   }
 }
 

@@ -56,10 +56,30 @@ dal --repository /path/to/context init
 dal --repository /path/to/context import /path/to/catalog.yaml
 dal --repository /path/to/context validate
 dal --repository /path/to/context build
-dal --repository /path/to/context search "customer retention" --token-budget 1600
+dal --repository /path/to/context search "customer retention" --token-budget 3200
 ```
 
 The importer never overwrites conflicting authored objects or modifies source files. Migration reports identify unsupported nodes and missing join endpoints in former DAL JSON graph exports. Custom DuckDB catalogs and ZIP archives are not supported.
+
+For focused discovery:
+
+```sh
+dal table get TABLE_ID --columns-limit 20
+dal column search "customer identifier" --table TABLE_ID
+dal column list --table TABLE_ID --limit 50 --offset 0
+dal table evidence TABLE_ID --limit 50
+dal table evidence TABLE_ID --column COLUMN_ID --claim /description --limit 50
+```
+
+Search defaults to 3,200 estimated output tokens. For multi-part questions, search
+each independent fact and combine the results; one high-ranking match does not
+answer every clause. Table details include a bounded columns section with paging.
+
+Joins whose endpoint columns or tables are missing, deprecated, restricted, or
+reported absent by the latest physical existence evidence are withheld from
+retrieval and flagged by health. The authored join remains available for repair.
+Health is read-only: new source findings must be recorded and rebuilt before they
+change the compiled catalog. A partial source snapshot is not proof of absence.
 
 ## UI
 
@@ -70,6 +90,12 @@ Search returns a recommended starting point and suggested next commands within a
 ![Search results for orders by customer, with a gold query and next commands](docs/images/ui-search.png)
 
 The catalog separates data joins, business relations, and ontology mappings.
+
+Catalog, Curation, Doctrine, and Gold queries have scoped search. Table pages show
+grain, searchable columns, joins, and field-level curation; doctrine remains the
+methodology above those resources. The Ontology screen exposes entities, properties,
+relations, metrics, and links to their data mappings. Raw records are collapsed under
+“Technical record”; methodology and saved SQL are rendered for reading.
 
 ![Orders table with grain, data joins, mappings, and resource navigation](docs/images/ui-catalog.png)
 

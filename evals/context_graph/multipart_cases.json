@@ -1,0 +1,28 @@
+{
+  "format": "dal.benchmark-cases.v1",
+  "name": "Multi-part fact retrieval",
+  "source": {"split": "development", "synthetic": true, "decomposition": "human-authored fact queries, not model-generated plans"},
+  "gate": {"minimum_success_at_budget_rate": 1.0},
+  "cases": [
+    {
+      "case_id": "borrower-contact-and-current-loans",
+      "question": "Find borrower contact emails, the rule for currently borrowed books, and how to join loans to members.",
+      "retrieval_queries": ["member contact email", "currently borrowed active loans exclude returned", "join loans borrowing members"],
+      "expected_object_ids": ["column:members.email", "doctrine:active-loans", "join:loan-member"],
+      "max_turns": 3,
+      "max_tokens": 9600,
+      "category": "multipart",
+      "source_refs": ["synthetic_catalog.py#column:members.email", "synthetic_catalog.py#doctrine:active-loans", "synthetic_catalog.py#join:loan-member"]
+    },
+    {
+      "case_id": "subjects-grain-and-identifiers",
+      "question": "Which column contains book subject tags, what does one loan row represent, and which identifier connects a loan to a member?",
+      "retrieval_queries": ["book subject tags array", "loan grain one row per loan_id", "borrowing member references members.member_id"],
+      "expected_object_ids": ["column:books.tags", "table:loans", "column:loans.member_id"],
+      "max_turns": 3,
+      "max_tokens": 9600,
+      "category": "multipart",
+      "source_refs": ["synthetic_catalog.py#column:books.tags", "synthetic_catalog.py#table:loans", "synthetic_catalog.py#column:loans.member_id"]
+    }
+  ]
+}

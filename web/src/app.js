@@ -11,21 +11,25 @@ const revision = document.querySelector("#revision");
 const toast = document.querySelector("#toast");
 
 const views = {
-  search: () => renderSearch(workspace, evidenceRail),
-  catalog: () => renderCatalog(workspace, evidenceRail),
-  curation: () => renderCuration(workspace, evidenceRail, notify),
-  doctrine: () => renderCatalog(workspace, evidenceRail, "doctrine"),
-  "gold-queries": () => renderCatalog(workspace, evidenceRail, "gold_query"),
-  health: () => renderHealth(workspace, evidenceRail),
+  search: (signal) => renderSearch(workspace, evidenceRail, signal),
+  catalog: (signal) => renderCatalog(workspace, evidenceRail, null, signal),
+  ontology: (signal) => renderCatalog(workspace, evidenceRail, "ontology", signal),
+  curation: (signal) => renderCuration(workspace, evidenceRail, notify, signal),
+  doctrine: (signal) => renderCatalog(workspace, evidenceRail, "doctrine", signal),
+  "gold-queries": (signal) => renderCatalog(workspace, evidenceRail, "gold_query", signal),
+  health: (signal) => renderHealth(workspace, evidenceRail, signal),
 };
 
+let activeView;
 function render() {
+  activeView?.abort();
+  activeView = new AbortController();
   const route = currentRoute();
   document.querySelectorAll("[data-route]").forEach((link) => {
     const active = link.dataset.route === route;
     link.toggleAttribute("aria-current", active);
   });
-  views[route]();
+  views[route](activeView.signal);
 }
 
 function notify(message) {
@@ -53,8 +57,10 @@ document.querySelector("#access-token").addEventListener("click", () => {
 });
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "/" && !["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) {
+  if (event.key === "/" && !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName) && !document.activeElement.isContentEditable) {
     event.preventDefault();
+    const scopedSearch = document.querySelector("#view-query");
+    if (scopedSearch) { scopedSearch.focus(); return; }
     if (currentRoute() !== "search") navigate("search");
     window.setTimeout(() => document.querySelector("#context-query")?.focus(), 0);
   }

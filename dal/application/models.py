@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from typing import Mapping
 import math
 
+DEFAULT_TOKEN_BUDGET = 3_200
+
 
 @dataclass(frozen=True)
 class CatalogObject:
@@ -15,6 +17,13 @@ class CatalogObject:
     parent_id: str | None
     source: str | None
     payload: Mapping[str, object]
+
+
+@dataclass(frozen=True)
+class TableDetail(CatalogObject):
+    columns: tuple[CatalogObject, ...]
+    columns_page: Mapping[str, object]
+    next_commands: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -184,7 +193,7 @@ class SearchOptions:
     max_connections: int = 6
     max_evidence: int = 6
     candidate_limit: int = 100
-    token_budget: int = 1_600
+    token_budget: int = DEFAULT_TOKEN_BUDGET
     include_deprecated: bool = False
 
     def __post_init__(self) -> None:

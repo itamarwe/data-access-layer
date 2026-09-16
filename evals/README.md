@@ -39,7 +39,8 @@ IDs do not. Consequently this checks discovery, not whether a response includes
 every fact an agent needs to write correct SQL. The gate requires 100% success
 within budget and mean recall of 1.0. Latency is reported but has no pass threshold.
 
-The default budget is 1,600 **estimated question plus response tokens**. This is
+The benchmark's default budget is 1,600 **estimated question plus response tokens**
+(separate from the CLI's 3,200 estimated output-token default). This is
 different from `dal search --token-budget`, which bounds the response alone.
 Estimates use UTF-8 byte length divided by four, not a provider tokenizer.
 Experiment with a tighter budget:
@@ -115,3 +116,22 @@ without the added context while recording actual model usage.
 The optional `context_graph/measure_archive.py` command measures a locally supplied
 catalog without publishing its questions, SQL, or evidence. No input archives or
 production benchmark outputs are included in this repository.
+
+## Multi-part questions
+
+```sh
+python -m evals.context_graph.multipart
+python -m pytest evals/context_graph/test_multipart.py
+```
+
+This suite compares a joint question with a human-authored plan containing one
+search per fact. Both variants must retrieve every required object under the same
+total budget. The fact-by-fact variant counts all three calls, the original question,
+the fact queries, and every response; it does not claim that extra searches are free.
+Negative controls fail when one fact is absent or the plan exceeds the turn budget.
+
+The two synthetic development cases test retrieval, not automatic decomposition,
+SQL correctness, or a live agent's adherence to the skill. In the initial BM25 run,
+the joint variant covered all facts on 1/2 cases and the fact-by-fact variant on 2/2,
+at approximately 1,360 versus 3,505 mean estimated tokens and one versus three calls.
+These small fixture results motivate the workflow; they are not production accuracy.

@@ -14,7 +14,7 @@ from .kinds import command_name, require_kind
 from .models import (
     CatalogObject, CompactMatch, EvidenceSummary, GraphNeighbor, NextCommand,
     Omissions, RankingSignals, RankingWeights, SearchCapabilities, SearchOptions,
-    SearchResponse, SearchResult, StartWith,
+    SearchResponse, SearchResult, StartWith, TableDetail,
 )
 from .presentation import gaps, grain, status, summary
 from .ranking import combine, cosine, normalized, publication_signal, tokenize
@@ -40,15 +40,37 @@ class CatalogService:
         self._embedding_resolved = embedder is not None
 
     @pinned
-    def list(self, kind: str, *, limit: int = 20, offset: int = 0, include_deprecated: bool = False) -> tuple[CatalogObject, ...]:
+    def list(self, kind: str, *, limit: int = 20, offset: int = 0, include_deprecated: bool = False,
+             parent_id: str | None = None, referenced_object_id: str | None = None) -> tuple[CatalogObject, ...]:
         require_kind(kind)
         if not 1 <= limit <= 100 or offset < 0:
             raise ValueError("limit must be 1..100 and offset cannot be negative")
-        return self.catalog.list_objects(kind, limit, offset, include_deprecated)
+        return self.catalog.list_objects(kind, limit, offset, include_deprecated, parent_id, referenced_object_id)
+
+    @pinned
+    def resolve(self, object_ids: list[str]) -> tuple[CatalogObject, ...]:
+        if not 1 <= len(object_ids) <= 100 or any(not isinstance(value, str) or not value for value in object_ids):
+            raise ValueError("provide 1..100 nonempty object IDs")
+        identifiers = tuple(dict.fromkeys(object_ids))
+        found = self.catalog.objects(identifiers)
+        return tuple(found[identifier] for identifier in identifiers if identifier in found)
 
     @pinned
     def get(self, kind: str, object_id: str) -> CatalogObject | None:
         return self.catalog.get_object(object_id, require_kind(kind))
+
+    @pinned
+    def table_detail(self, object_id: str, *, limit: int = 20, offset: int = 0) -> TableDetail | None:
+        if not 1 <= limit <= 100 or offset < 0:
+            raise ValueError("limit must be 1..100 and offset cannot be negative")
+        table = self.catalog.get_object(object_id, "table")
+        if table is None:
+            return None
+        columns = self.catalog.list_objects("column", limit + 1, offset, parent_id=object_id)
+        more = len(columns) > limit
+        return TableDetail(**asdict(table), columns=columns[:limit],
+                           columns_page={"limit": limit, "offset": offset, "has_more": more},
+                           next_commands=(f"dal column list --table {shlex.quote(object_id)} --limit {limit} --offset {offset + limit}",) if more else ())
 
     @pinned
     def neighbors(self, object_id: str, *, limit: int = 20) -> tuple[GraphNeighbor, ...]:
@@ -63,29 +85,39 @@ class CatalogService:
         return connections(self.catalog, (object_id,), limit)
 
     @pinned
-    def evidence(self, object_id: str, *, limit: int = 20) -> tuple[EvidenceSummary, ...]:
+    def evidence(self, object_id: str, *, limit: int = 20, column_id: str | None = None,
+                 claim_path: str | None = None) -> tuple[EvidenceSummary, ...]:
         if not 1 <= limit <= 100:
             raise ValueError("limit must be 1..100")
-        return self.catalog.evidence((object_id,), limit)
+        if object_id in self.catalog.blocked_joins:
+            return ()
+        subject = object_id
+        if column_id is not None:
+            column = self.catalog.get_object(column_id, "column")
+            if column is None or column.parent_id != object_id:
+                raise ValueError("column must belong to the specified table")
+            subject = column_id
+        return self.catalog.evidence((subject,), limit, claim_path)
 
     def search_kind(
         self, kind: str, query: str, *, weights: Mapping[str, float] | None = None,
-        options: SearchOptions | None = None,
+        options: SearchOptions | None = None, parent_id: str | None = None,
     ) -> SearchResponse:
-        return self.search(query, kind=require_kind(kind), weights=weights, options=options)
+        return self.search(query, kind=require_kind(kind), weights=weights, options=options, parent_id=parent_id)
 
     @pinned
     def search(
         self, query: str, *, kind: str | None = None,
         weights: Mapping[str, float] | None = None, options: SearchOptions | None = None,
+        parent_id: str | None = None,
     ) -> SearchResponse:
         if kind:
             require_kind(kind)
         selected_weights = RankingWeights().override(weights)
         limits = options or SearchOptions()
         terms = tokenize(query)
-        lexical = self.catalog.bm25(terms, limits.candidate_limit, kind)
-        embedding, capabilities = self._embedding_scores(query, kind, limits.candidate_limit)
+        lexical = self.catalog.bm25(terms, limits.candidate_limit, kind, parent_id)
+        embedding, capabilities = self._embedding_scores(query, kind, limits.candidate_limit, parent_id)
         identifiers = tuple(dict.fromkeys((*lexical, *embedding)))
         if not terms or not identifiers:
             return _fit(_empty(query, selected_weights, capabilities), limits.token_budget, limits.max_compact)
@@ -107,9 +139,9 @@ class CatalogService:
         return self._response(query, ranked, selected_weights, capabilities, limits)
 
     def _embedding_scores(
-        self, query: str, kind: str | None, limit: int,
+        self, query: str, kind: str | None, limit: int, parent_id: str | None = None,
     ) -> tuple[dict[str, float], SearchCapabilities]:
-        vectors, index_status = self.catalog.embedding_index(kind)
+        vectors, index_status = self.catalog.embedding_index(kind, parent_id)
         if not vectors:
             reason = "embedding_index_missing" if index_status == "missing" else "embedding_index_empty"
             return {}, SearchCapabilities("bm25", "unavailable", reason)

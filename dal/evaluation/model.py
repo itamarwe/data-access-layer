@@ -17,8 +17,11 @@ class EvaluationCase:
     evaluable: bool = True
     not_evaluable_reason: str | None = None
     max_latency_ms: float | None = None
+    retrieval_queries: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
+        if any(not isinstance(query, str) or not query.strip() for query in self.retrieval_queries):
+            raise ValueError("retrieval queries must be nonempty strings")
         if not self.case_id or not self.category:
             raise ValueError("evaluation case identity and category are required")
         if self.max_turns < 1 or self.max_tokens < 1:
