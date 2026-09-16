@@ -26,7 +26,7 @@ def collect_athena(client, query_ids, *, collected_at: datetime, max_queries: in
 
 
 def collect_queries(queries, *, collected_at: datetime):
-    objects, evidence, diagnostics = {}, [], []
+    objects, evidence, diagnostics = {}, {}, []
     for query in queries:
         sql = query.get("Query", query.get("sql", ""))
         if not isinstance(sql, str) or not sql.strip() or "-- context-graph-collector" in sql:
@@ -87,11 +87,14 @@ def collect_queries(queries, *, collected_at: datetime):
                         "right": [stable_id("column", right) for _, right in pairs],
                         "predicate": sql_predicate, "join_type": join_type}
                 objects[identifier] = item
-                evidence.append(claim(identifier, "/usage/join_expression", item["predicate"],
-                                      kind=SourceKind.QUERY_LOG, revision=revision, collected_at=collected_at,
-                                      uri=f"athena:query/{query_id}"))
+                record = claim(identifier, "/usage/join_expression", item["predicate"],
+                               kind=SourceKind.QUERY_LOG, revision=revision, collected_at=collected_at,
+                               uri=f"athena:query/{query_id}")
+                # Repeated scopes support the same source-backed claim, not new evidence.
+                evidence[record.record_id] = record
         for source in sorted(referenced):
-            evidence.append(claim(stable_id("table", source), "/usage/query", query_id,
-                                  kind=SourceKind.QUERY_LOG, revision=revision, collected_at=collected_at,
-                                  uri=f"athena:query/{query_id}"))
-    return CollectionResult(tuple(objects.values()), tuple(evidence), tuple(diagnostics))
+            record = claim(stable_id("table", source), "/usage/query", query_id,
+                           kind=SourceKind.QUERY_LOG, revision=revision, collected_at=collected_at,
+                           uri=f"athena:query/{query_id}")
+            evidence[record.record_id] = record
+    return CollectionResult(tuple(objects.values()), tuple(evidence.values()), tuple(diagnostics))
