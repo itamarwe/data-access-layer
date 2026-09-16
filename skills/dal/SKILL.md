@@ -81,18 +81,23 @@ or use proposals within the user's requested scope, then validate and build.
 Do not publish proposals merely because they appear in search results. Proposal
 publication requires the current revision and the user's authorization.
 
-Route each finding to the resource and field it describes; do not turn every caveat
-or “gotcha” into a doctrine document. Column meaning belongs in column `description`
-(or `unit`/`expression`); row meaning in table `grain`; mandatory filters in
-`required_filters`; join behavior in `predicate`, `cardinality`, `grain_effect`, or
-the join's `description`. Update the existing field without losing its prior context.
-Keep supporting reasons and uncertainty in evidence for that resource/claim.
-Doctrine is reusable methodology above individual resource definitions, not a
-catch-all for extracted strings. Consolidate related methodology into a coherent
-document and link its applicable `object_ids`. Gold queries hold reusable questions
-and SQL. If the target or interpretation is unclear, propose a change for review
-rather than inventing a new doctrine. See [authoring](references/authoring.md) when
-creating or repairing context from notes or extracted metadata.
+Object fields describe what an object means, contains, or requires for correct use.
+Use the dedicated field when one exists, otherwise that object's `description`;
+prose and caveats do not automatically belong in doctrine. A join condition or
+metric formula stays on its object even when it involves several tables.
+
+Doctrine explains how to reason with the data: choose an approach, combine
+definitions, interpret results, or follow a reusable analytical procedure. It may
+span objects, apply to one object, or have no particular object. This is a distinction
+of meaning, not object count. Use `object_ids` for known scope; an empty scope is
+for genuinely object-independent methodology, not a fact with an unknown owner.
+State when the method applies and any exceptions in its content.
+
+Split mixed notes into object facts and any remaining methodology. Keep facts in
+one canonical place and reference them from doctrine instead of copying them.
+Sources, uncertainty, and measurements belong in evidence; reusable question/SQL
+examples belong in gold queries. Read [authoring](references/authoring.md) before
+creating or reorganizing context from notes or extracted metadata.
 
 ```sh
 dal --repository /path/to/context validate
