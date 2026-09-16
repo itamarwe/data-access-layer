@@ -9,6 +9,8 @@ Use the local `dal` CLI to retrieve the context needed for correct SQL. DAL retr
 context; it does not execute warehouse queries. Use the user's separately authorized
 data connection for execution.
 
+<!-- installed-runtime -->
+
 ## Locate the graph
 
 Use the context repository the user selected: the directory containing
@@ -16,9 +18,10 @@ Use the context repository the user selected: the directory containing
 current directory is the user's graph. If it is unknown, ask or inspect the
 project's existing configuration.
 
-Check `dal --help` when command availability is uncertain. If DAL is missing,
-read [setup](references/setup.md). Installing this skill does not install Python,
-the runtime, embedding models, or database credentials.
+Check the installed launcher's `--help` when command availability is uncertain.
+If no installed launcher is listed above, use an existing `dal` command or read
+[setup](references/setup.md) for the complete installer. It installs private Python
+and DAL; warehouse credentials and embedding model weights are not included.
 
 ## Retrieve enough context to answer
 

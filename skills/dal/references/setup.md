@@ -1,40 +1,37 @@
-# Runtime setup
+# Complete installation
 
-The skill contains agent instructions, not the Python runtime. DAL requires
-Python 3.11 or newer. If installation is part of the user's request, use an
-isolated environment in a software checkout; otherwise explain the missing
-dependency before installing it.
+Run from the agent's project directory (Node.js 20+, internet, and `tar` required):
 
 ```sh
-git clone https://github.com/itamarwe/data-access-layer.git
-cd data-access-layer
-python3 -m venv .venv
-. .venv/bin/activate
-python -m pip install -e '.[dev]'
-dal --help
+npx github:itamarwe/data-access-layer install --agent claude-code
 ```
 
-On Windows, activate `.venv\Scripts\Activate.ps1` in PowerShell instead. Outside
-an activated environment, use the environment's `dal` executable directly.
+Use `--agent codex` for Codex, or add `--global` for all projects. The installer
+downloads checksum-verified uv, installs private Python 3.12 and DAL dependencies,
+tests the CLI, and only then installs the skill. It does not require system Python,
+change shell profiles, configure warehouse credentials, or create a context graph.
 
-Do not replace an existing user's graph with the example. For an explicitly
-requested demonstration, the checkout includes a synthetic shop:
+The installed SKILL.md gives the exact `node /absolute/path/scripts/dal.mjs`
+launcher. Use it instead of `dal` in examples. It does not depend on shell
+activation or DAL being on PATH. Keep `runtime.json` and the referenced private
+runtime local to this machine; do not commit or copy them to another machine.
+Run the installer on each machine instead.
 
-```sh
-dal --repository examples/shop build
-dal --repository examples/shop search "orders by customer"
-dal --repository examples/shop serve
-```
+Re-running reuses a healthy matching runtime. An existing changed skill is backed
+up outside the discoverable skills directory before replacement, including an
+older instructions-only installation. The installer prints its backup location.
+Runtime files default to `~/.local/share/dal`; `DAL_HOME` can select another path.
+Re-run the installer to repair missing runtime files. Keep old runtime directories
+while other installed skills still point to them.
 
-Open `http://127.0.0.1:8765`; API documentation is at `/api/docs`. For a new empty
-graph, use `dal --repository /path/to/context init`, add native resources, and
-run `validate` followed by `build`.
+BM25 works immediately. Add `--embeddings` to install optional embedding libraries;
+then build the graph with `--embedding-model BAAI/bge-small-en-v1.5` to acquire
+weights. This can download model weights; inference remains local. Private graph
+content is never uploaded by the installer.
 
-BM25 works without embedding downloads. Optional hybrid retrieval requires
-`python -m pip install -e '.[embeddings]'` and a build with
-`--embedding-model BAAI/bge-small-en-v1.5`. This can download model weights;
-embedding inference stays local. Do not upload private graph content to a hosted
-model as a fallback.
+If only `npx skills add ...` was used, it copied instructions without running this
+installer. Run the complete command above to finish setup.
 
-The source checkout's `evals/README.md` documents synthetic retrieval benchmarks
-and controlled SQL tests. These are not live-agent accuracy measurements.
+For contributors, the source checkout still supports Python 3.11+ with an editable
+installation (`python -m pip install -e '.[dev]'`). See the repository README for
+the synthetic shop demonstration and `evals/README.md` for benchmarks.

@@ -4,21 +4,35 @@ Give an AI agent the organizational context it needs to query data correctly, wi
 
 There is one native model, one compiler, and one application service shared by the CLI, REST API, browser UI, and MCP. Legacy archives are supported through an explicit one-way importer. The examples and evaluation fixtures are synthetic.
 
-## Install the agent skill
+## Install the complete agent skill
 
-With Node.js/npm installed, run this from your agent project's directory:
+With Node.js 20+ and npm installed, run this from your agent project's directory:
 
 ```sh
-npx skills add itamarwe/data-access-layer --skill dal
+npx github:itamarwe/data-access-layer install --agent claude-code
 ```
 
-The installer lets you choose a supported agent. To target Codex directly, add `--agent codex --yes`. See the [skill instructions](skills/dal/SKILL.md).
+Then use `/dal` in Claude Code and tell it where your context graph lives:
 
-The skill teaches your agent to discover relevant context, follow useful next steps, check evidence and join requirements, and maintain the graph when asked. It installs **agent instructions**, not the Python runtime, embedding models, or credentials. Install the runtime below and tell your agent which context repository to use.
+```text
+/dal Use the graph at ./context to find the tables and joins for monthly revenue.
+```
 
-## Run it
+For Codex, use `--agent codex` and invoke `$dal`. Add `--global` to install for all projects instead of only the current project.
 
-Requires Python 3.11 or newer.
+The installer downloads a checksum-verified uv release, installs private Python 3.12 and the DAL runtime, verifies the CLI, and installs the skill with an explicit launcher path. **No separate Python installation, shell activation, or PATH change is needed.** BM25 retrieval, compilation, curation, REST, UI, and MCP are included. Warehouse credentials, your graph, and optional embedding model weights are not.
+
+Downloads require internet access; archive extraction uses `tar` (included on current macOS, Linux distributions, and Windows). Artifacts are provided for x64 and arm64 on those platforms. Runtime files live in `~/.local/share/dal`, overridable with `DAL_HOME`. Nothing is installed into system Python and no shell profiles are edited.
+
+The generated skill tells the agent to use `node /absolute/path/to/skill/scripts/dal.mjs` in place of `dal` in the examples below. This also works in an already-running Claude session without a new PATH. Keep the installed skill's machine-specific `runtime.json` local; rerun the installer on each machine. An existing changed skill is preserved in a backup before replacement. Repeating an unchanged installation reuses its healthy runtime.
+
+For optional embedding libraries, add `--embeddings`; model weights are acquired later when you build with `--embedding-model`. See [setup details](skills/dal/references/setup.md).
+
+This command executes the package directly from GitHub; it does not require an npm registry publication. The older `npx skills add ...` command installs **instructions only** and is not the complete installer.
+
+## Run from source
+
+For contributors or a standalone CLI demonstration, use Python 3.11 or newer. Skill users do not need this separate setup.
 
 ```sh
 git clone https://github.com/itamarwe/data-access-layer.git
@@ -140,9 +154,13 @@ These are small development retrieval checks, **not live-agent SQL accuracy or e
 ```sh
 python -m pytest
 npm --prefix web run build
+npm run test:installer
+npm run test:install
 ```
 
 Tests cover native validation, compilation, damaged-build recovery, proposals, health, API, CLI, UI assets, imports, MCP, retrieval, and independently scored SQL tasks. SQL replay tests are not live-model accuracy measurements. Evaluation is separate from the product API.
+
+`test:installer` checks installer options, checksum verification, runtime identity, skill updates/backups, and failure recovery instructions. `test:install` needs network access: it packs the actual npm artifact, installs it into a temporary project with a private Python, and verifies graph build/search, bundled UI assets, idempotency, and both agent destinations. CLI checks run with an empty PATH. Temporary test files are removed afterward.
 
 See [validation results](docs/validation/native-context-graph.md) for test coverage, synthetic evaluation results, and remaining limitations.
 
