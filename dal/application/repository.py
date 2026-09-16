@@ -10,6 +10,8 @@ from pathlib import Path
 
 import duckdb
 
+from dal.database import read_only_connection
+
 from .models import CatalogObject, EvidenceSummary
 
 
@@ -200,7 +202,7 @@ class BundleCatalog:
         return tuple(result)
 
     def _open(self):
-        return duckdb.connect(str(self.database), read_only=True)
+        return read_only_connection(self.database)
 
 
 def _object(row) -> CatalogObject:
