@@ -45,7 +45,7 @@ test('only supported verified artifacts are accepted', () => {
 test('installation records its interpreter and does not change a matching skill', async t => {
   const directory = await temporary(t);
   const target = join(directory, 'space and quotes \' $', 'skills', 'dal');
-  const python = join(directory, 'private python');
+  const python = process.execPath;
   const first = await installSkill(join(root, 'skills/dal'), target, python);
   const second = await installSkill(join(root, 'skills/dal'), target, python);
   assert.equal(first.unchanged, false);
@@ -53,6 +53,10 @@ test('installation records its interpreter and does not change a matching skill'
   assert.equal(JSON.parse(await readFile(join(target, 'runtime.json'), 'utf8')).python, python);
   assert.ok((await readFile(join(target, 'SKILL.md'), 'utf8')).includes(first.command));
   assert.ok(await readFile(join(target, 'references/setup.md'), 'utf8'));
+  if (process.platform !== 'win32') {
+    const result = spawnSync('/bin/sh', ['-c', `${first.command} --help`], { encoding: 'utf8', env: { ...process.env, PATH: '' } });
+    assert.match(result.stderr, /bad option: -I/);
+  }
 });
 
 test('changed skill is preserved outside skill discovery before replacement', async t => {

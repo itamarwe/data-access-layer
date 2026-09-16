@@ -1,6 +1,6 @@
 # Complete installation
 
-Run from the agent's project directory (Node.js 20+, internet, and `tar` required):
+Run from the agent's project directory (Node.js 20+, npm, Git, internet, and `tar` required):
 
 ```sh
 npx github:itamarwe/data-access-layer install --agent claude-code
@@ -11,8 +11,8 @@ downloads checksum-verified uv, installs private Python 3.12 and DAL dependencie
 tests the CLI, and only then installs the skill. It does not require system Python,
 change shell profiles, configure warehouse credentials, or create a context graph.
 
-The installed SKILL.md gives the exact `node /absolute/path/scripts/dal.mjs`
-launcher. Use it instead of `dal` in examples. It does not depend on shell
+The installed SKILL.md gives the exact launcher, with absolute Node and script
+paths. Use it instead of `dal` in examples. It does not depend on shell
 activation or DAL being on PATH. Keep `runtime.json` and the referenced private
 runtime local to this machine; do not commit or copy them to another machine.
 Run the installer on each machine instead.

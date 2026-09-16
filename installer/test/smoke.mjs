@@ -52,7 +52,12 @@ assert create_mcp(services.catalog, services.health) is not None
   assert.equal(await readFile(join(skill, 'runtime.json'), 'utf8'), runtimeBefore);
   run(process.execPath, [...installArgs, '--agent', 'codex'], { cwd: project, env });
   assert.equal(await readFile(join(project, '.agents/skills/dal/runtime.json'), 'utf8'), runtimeBefore);
-  console.log('PASS: packed npx install, private Python, no-PATH CLI, graph build/search, UI/API/MCP, repeated install, and Codex.');
+  run(process.execPath, [...installArgs, '--embeddings'], { cwd: project, env });
+  const upgraded = JSON.parse(await readFile(join(skill, 'runtime.json'), 'utf8'));
+  assert.notEqual(upgraded.python, python);
+  run(upgraded.python, ['-I', '-c', 'import fastembed, numpy, usearch']);
+  assert.equal(await readFile(join(project, '.agents/skills/dal/runtime.json'), 'utf8'), runtimeBefore);
+  console.log('PASS: packed npx install, private Python, no-PATH CLI, graph build/search, UI/API/MCP, repeated install, Codex, and optional embeddings.');
 } finally {
   await rm(directory, { recursive: true, force: true });
 }

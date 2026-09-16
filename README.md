@@ -6,7 +6,7 @@ There is one native model, one compiler, and one application service shared by t
 
 ## Install the complete agent skill
 
-With Node.js 20+ and npm installed, run this from your agent project's directory:
+With Node.js 20+, npm, and Git installed, run this from your agent project's directory:
 
 ```sh
 npx github:itamarwe/data-access-layer install --agent claude-code
@@ -24,7 +24,9 @@ The installer downloads a checksum-verified uv release, installs private Python 
 
 Downloads require internet access; archive extraction uses `tar` (included on current macOS, Linux distributions, and Windows). Artifacts are provided for x64 and arm64 on those platforms. Runtime files live in `~/.local/share/dal`, overridable with `DAL_HOME`. Nothing is installed into system Python and no shell profiles are edited.
 
-The generated skill tells the agent to use `node /absolute/path/to/skill/scripts/dal.mjs` in place of `dal` in the examples below. This also works in an already-running Claude session without a new PATH. Keep the installed skill's machine-specific `runtime.json` local; rerun the installer on each machine. An existing changed skill is preserved in a backup before replacement. Repeating an unchanged installation reuses its healthy runtime.
+The complete installation has been tested on macOS arm64. Linux and Windows download mappings are included but have not yet been verified end-to-end.
+
+The generated skill gives an exact launcher command with absolute Node and Python paths, used in place of `dal` in the examples below. This also works in an already-running Claude session without a new PATH. Keep the installed skill's machine-specific `runtime.json` local; rerun the installer on each machine. An existing changed skill is preserved in a backup before replacement. Repeating an unchanged installation reuses its healthy runtime.
 
 For optional embedding libraries, add `--embeddings`; model weights are acquired later when you build with `--embedding-model`. See [setup details](skills/dal/references/setup.md).
 
@@ -160,7 +162,7 @@ npm run test:install
 
 Tests cover native validation, compilation, damaged-build recovery, proposals, health, API, CLI, UI assets, imports, MCP, retrieval, and independently scored SQL tasks. SQL replay tests are not live-model accuracy measurements. Evaluation is separate from the product API.
 
-`test:installer` checks installer options, checksum verification, runtime identity, skill updates/backups, and failure recovery instructions. `test:install` needs network access: it packs the actual npm artifact, installs it into a temporary project with a private Python, and verifies graph build/search, bundled UI assets, idempotency, and both agent destinations. CLI checks run with an empty PATH. Temporary test files are removed afterward.
+`test:installer` checks installer options, checksum verification, runtime identity, skill updates/backups, and failure recovery instructions. `test:install` needs network access: it packs the actual npm artifact, installs it into a temporary project with a private Python, and verifies graph build/search, bundled UI assets, idempotency, both agent destinations, and an upgrade to optional embedding dependencies. CLI checks run with an empty PATH. Temporary test files are removed afterward.
 
 See [validation results](docs/validation/native-context-graph.md) for test coverage, synthetic evaluation results, and remaining limitations.
 

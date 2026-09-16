@@ -22,11 +22,11 @@ export async function installSkill(source, target, python) {
   const files = await skillFiles(source);
   files.set('runtime.json', Buffer.from(JSON.stringify({ python }) + '\n'));
   const launcher = join(target, 'scripts', 'dal.mjs');
-  const quoted = process.platform === 'win32' ? `"${launcher}"` : `'${launcher.replaceAll("'", "'\\''")}'`;
-  const command = `node ${quoted}`;
+  const quote = value => process.platform === 'win32' ? `'${value.replaceAll("'", "''")}'` : `'${value.replaceAll("'", "'\\''")}'`;
+  const command = `${process.platform === 'win32' ? '& ' : ''}${quote(process.execPath)} ${quote(launcher)}`;
   const text = files.get('SKILL.md').toString();
   files.set('SKILL.md', Buffer.from(text.replace('<!-- installed-runtime -->',
-    `Use this exact launcher in place of \`dal\` in every command below:\n\n\`\`\`sh\n${command}\n\`\`\`\n\nIt works without Python or DAL on PATH. Do not activate a shell environment.`)));
+    `Use this exact launcher in place of \`dal\` in every command below:\n\n\`\`\`${process.platform === 'win32' ? 'powershell' : 'sh'}\n${command}\n\`\`\`\n\nIt uses absolute Node and Python paths and needs no PATH changes. Do not activate a shell environment.`)));
 
   let existing;
   try { existing = await lstat(target); } catch (error) { if (error.code !== 'ENOENT') throw error; }

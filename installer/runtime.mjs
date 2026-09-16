@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { chmod, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { run } from './process.mjs';
 
 const uv = JSON.parse(await readFile(new URL('./uv.json', import.meta.url), 'utf8'));
@@ -81,9 +82,8 @@ export async function ensureRuntime(root, home, embeddings = false) {
   try {
     console.log('Installing private Python 3.12 and DAL dependencies…');
     run(executable, ['venv', '--no-config', '--managed-python', '--python', '3.12', runtime], { env });
-    const args = ['pip', 'install', '--no-config', '--python', python, root];
-    if (embeddings) args.push('--extra', 'embeddings');
-    run(executable, args, { env });
+    const requirement = `dal-context-graph${embeddings ? '[embeddings]' : ''} @ ${pathToFileURL(root).href}`;
+    run(executable, ['pip', 'install', '--no-config', '--python', python, requirement], { env });
     run(python, ['-I', '-m', 'dal.cli', '--help'], { stdio: 'pipe' });
     const temporaryRecord = join(runtime, 'installed.json');
     await writeFile(temporaryRecord, JSON.stringify({ python, fingerprint }) + '\n');
