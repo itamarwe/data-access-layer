@@ -8,7 +8,7 @@ const examples = [
   "What joins customers to orders?",
 ];
 
-export async function renderSearch(main, rail) {
+export async function renderSearch(main, rail, signal) {
   const asked = new URLSearchParams(location.search).get("q") || "";
   main.innerHTML = searchShell(asked);
   rail.innerHTML = sideIntro();
@@ -17,11 +17,12 @@ export async function renderSearch(main, rail) {
   const output = main.querySelector("#search-output");
   output.innerHTML = loading("Finding the smallest useful context");
   try {
-    const result = await api(`/search${query({ q: asked })}`);
+    const result = await api(`/search${query({ q: asked })}`, { signal });
+    if (signal?.aborted) return;
     output.innerHTML = resultView(result);
-    if (result.start_with) await renderTrail(result, rail);
+    if (result.start_with) await renderTrail(result, rail, signal);
   } catch (error) {
-    output.innerHTML = failure(error);
+    if (!signal?.aborted) output.innerHTML = failure(error);
   }
 }
 
@@ -94,12 +95,13 @@ function compactRow(item) {
     <code>${escapeHtml(item.id)}</code><b>${Math.round(item.score * 100)}</b></div>`;
 }
 
-async function renderTrail(result, rail) {
+async function renderTrail(result, rail, signal) {
   const objectId = result.start_with.object_id;
   const [neighbors, evidence] = await Promise.all([
-    api(`/graph/neighbors${query({ object_id: objectId, limit: 3 })}`),
-    api(`/graph/evidence${query({ object_id: objectId, limit: 5 })}`),
+    api(`/graph/neighbors${query({ object_id: objectId, limit: 3 })}`, { signal }),
+    api(`/graph/evidence${query({ object_id: objectId, limit: 5 })}`, { signal }),
   ]);
+  if (signal?.aborted) return;
   const trail = document.querySelector("#context-trail");
   trail.innerHTML += neighbors.neighbors.map((item) => `<span class="trail-join" aria-hidden="true"></span>
     <div class="trail-node"><small>${kindName(item.via)}</small>

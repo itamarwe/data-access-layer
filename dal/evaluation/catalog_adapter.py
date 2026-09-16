@@ -42,24 +42,26 @@ class CatalogSearchAdapter:
 
     def __call__(self, case: EvaluationCase) -> SearchObservation:
         input_tokens = self.token_counter.count(case.question)
-        output_budget = max(1, case.max_tokens - input_tokens)
+        queries = case.retrieval_queries or (case.question,)
+        if case.retrieval_queries:
+            input_tokens += sum(self.token_counter.count(query) for query in queries)
+        output_budget = (case.max_tokens - input_tokens) // len(queries)
         options = replace(self.options, token_budget=output_budget)
         started = self.clock_ms()
-        response = self.service.search(
-            case.question, weights=self.weights, options=options,
-        )
+        responses = [self.service.search(query, weights=self.weights, options=options) for query in queries]
         elapsed = self.clock_ms() - started
-        identifiers = _response_ids(response)
-        embeddings = response.capabilities.embedding == "available"
+        identifiers = tuple(dict.fromkeys(identifier for response in responses for identifier in _response_ids(response)))
+        embeddings = all(response.capabilities.embedding == "available" for response in responses)
+        reasons = sorted({response.capabilities.embedding_reason for response in responses if response.capabilities.embedding_reason})
         return SearchObservation(
             returned_object_ids=identifiers,
-            turns=1,
+            turns=len(queries),
             input_tokens=input_tokens,
-            output_tokens=self.token_counter.count(_response_text(response)),
+            output_tokens=sum(self.token_counter.count(_response_text(response)) for response in responses),
             latency_ms=elapsed,
             embedding_available=embeddings,
             degradation_reason=(
-                None if embeddings else response.capabilities.embedding_reason
+                None if embeddings else "; ".join(reasons)
             ),
         )
 

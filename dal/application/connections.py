@@ -19,8 +19,10 @@ def connections(catalog, identifiers, limit):
             "AND (source_id IN (SELECT UNNEST(?)) OR target_id IN (SELECT UNNEST(?)) "
             "OR json_extract_string(payload, '$.id') IN (SELECT UNNEST(?))) "
             "AND coalesce(json_extract_string(payload, '$.status'), 'published') != 'deprecated' "
+            "AND coalesce(json_extract_string(payload, '$.id'), '') NOT IN (SELECT UNNEST(?)) "
+            "AND source_id NOT IN (SELECT UNNEST(?)) AND target_id NOT IN (SELECT UNNEST(?)) "
             "ORDER BY category, mapped_target, payload LIMIT ?",
-            [list(identifiers), list(identifiers), list(identifiers), limit],
+            [list(identifiers), list(identifiers), list(identifiers), *([list(catalog.blocked_joins)] * 3), limit],
         ).fetchall()
     result = {"relations": [], "joins": [], "mappings": []}
     endpoint_ids = set()
@@ -57,8 +59,9 @@ def neighbors(catalog, object_id, limit):
             "WHEN 'relation_endpoint' THEN CASE WHEN source_id = ? THEN 'endpoints' ELSE 'relations' END "
             "ELSE CASE WHEN source_id = ? THEN 'endpoints' ELSE 'joins' END END AS via "
             "FROM links WHERE kind != 'relation' AND (source_id = ? OR target_id = ?) "
+            "AND source_id NOT IN (SELECT UNNEST(?)) AND target_id NOT IN (SELECT UNNEST(?)) "
             "ORDER BY via, neighbor_id LIMIT ?",
-            [object_id] * 8 + [limit],
+            [object_id] * 8 + [list(catalog.blocked_joins), list(catalog.blocked_joins), limit],
         ).fetchall()
     objects = catalog.objects(row[0] for row in rows)
     return tuple(GraphNeighbor(via, summary(objects[identifier])) for identifier, via in rows if identifier in objects)

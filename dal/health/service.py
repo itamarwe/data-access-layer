@@ -11,10 +11,12 @@ from .evidence import inspect_evidence
 from .inputs import HealthRequest
 from .model import HealthResult, health_result
 from .physical import inspect_physical
+from .joins import inspect_joins
 
 
 def inspect_health(request: HealthRequest) -> HealthResult:
     failures, gaps, documents = inspect_authored(request.repository_root)
+    physical_failures = []
     if request.physical_catalog is not None:
         physical_failures, physical_gaps = inspect_physical(
             documents, request.physical_catalog, request.now,
@@ -27,6 +29,7 @@ def inspect_health(request: HealthRequest) -> HealthResult:
             request.evidence_directory, request.now,
             request.thresholds.evidence_max_age,
         ))
+    failures.extend(inspect_joins(documents, request.evidence_directory, physical_failures))
     if request.active_bundle is not None:
         expected_objects = expected_object_hashes(documents) if not failures else None
         failures.extend(inspect_bundle(

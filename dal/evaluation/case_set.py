@@ -59,6 +59,7 @@ def _case(value: object) -> EvaluationCase:
         "case_id", "question", "expected_object_ids", "max_turns", "max_tokens",
         "category", "source_refs", "evaluable", "not_evaluable_reason",
         "max_latency_ms",
+        "retrieval_queries",
     }
     if set(value) - allowed:
         raise ValueError("benchmark case has unknown fields")
@@ -66,6 +67,9 @@ def _case(value: object) -> EvaluationCase:
         raise ValueError("benchmark case question must be a non-empty string")
     expected = value.get("expected_object_ids")
     references = value.get("source_refs", [])
+    queries = value.get("retrieval_queries", [])
+    if not isinstance(queries, list) or not all(isinstance(item, str) and item.strip() for item in queries):
+        raise ValueError("retrieval_queries must be an array of nonempty strings")
     if not isinstance(expected, list) or not all(isinstance(item, str) for item in expected):
         raise ValueError("expected_object_ids must be an array of strings")
     if not isinstance(references, list) or not all(isinstance(item, str) for item in references):
@@ -81,4 +85,5 @@ def _case(value: object) -> EvaluationCase:
         evaluable=value.get("evaluable", True) is True,
         not_evaluable_reason=value.get("not_evaluable_reason"),
         max_latency_ms=value.get("max_latency_ms"),
+        retrieval_queries=tuple(queries),
     )

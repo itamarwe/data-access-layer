@@ -25,10 +25,13 @@ and DAL; warehouse credentials and embedding model weights are not included.
 
 ## Retrieve enough context to answer
 
-Start with the actual question, using one cross-type search:
+Identify the independent facts needed to answer the question. For a single fact,
+use one cross-type search. For a multi-part question, decompose it into focused
+searches—one per fact—rather than putting every clause into one ranked query.
+Preserve the original constraints and combine the retrieved facts before drafting SQL.
 
 ```sh
-dal --repository /path/to/context search "the user's data question" --token-budget 1600
+dal --repository /path/to/context search "one fact needed for the user's question" --token-budget 3200
 ```
 
 Use leading results, compact matches, methodology, gold queries, gaps, and suggested
@@ -40,7 +43,9 @@ join predicate or query. Retrieve the complete resource when needed:
 dal --repository /path/to/context table get TABLE_ID
 dal --repository /path/to/context connections OBJECT_ID
 dal --repository /path/to/context join get JOIN_ID
-dal --repository /path/to/context table evidence TABLE_ID
+dal --repository /path/to/context column search "customer identifier" --table TABLE_ID
+dal --repository /path/to/context table evidence TABLE_ID --limit 50
+dal --repository /path/to/context table evidence TABLE_ID --column COLUMN_ID --claim /description --limit 50
 ```
 
 `--repository` and `--bundle` go before the command. Resource commands use singular
@@ -59,6 +64,13 @@ matching context was found, not that the underlying data does not exist.
 
 The token budget is an estimate, not a provider token count. If important details
 were omitted, narrow the search, retrieve a specific object, or increase the budget.
+For example, “monthly revenue by customer, excluding tests, using current customers”
+needs facts about the revenue definition, timestamp/grain, test filter, and customer
+join/current-record rule. Search those facts separately; do not treat a strong match
+for revenue as evidence that the other parts were answered. Reuse retrieved resources
+and stop when every required fact is supported or explicitly identified as missing.
+Use 3,200 estimated output tokens as a practical starting budget for these searches;
+a tiny response that only contains identities is not enough to write correct SQL.
 Use the default ranking unless a concrete retrieval problem warrants a weight
 override. Check reported embedding availability before describing a search as hybrid.
 
@@ -68,6 +80,19 @@ Canonical files are authoritative; `.dal/query/` is a generated cache. Edit file
 or use proposals within the user's requested scope, then validate and build.
 Do not publish proposals merely because they appear in search results. Proposal
 publication requires the current revision and the user's authorization.
+
+Route each finding to the resource and field it describes; do not turn every caveat
+or “gotcha” into a doctrine document. Column meaning belongs in column `description`
+(or `unit`/`expression`); row meaning in table `grain`; mandatory filters in
+`required_filters`; join behavior in `predicate`, `cardinality`, `grain_effect`, or
+the join's `description`. Update the existing field without losing its prior context.
+Keep supporting reasons and uncertainty in evidence for that resource/claim.
+Doctrine is reusable methodology above individual resource definitions, not a
+catch-all for extracted strings. Consolidate related methodology into a coherent
+document and link its applicable `object_ids`. Gold queries hold reusable questions
+and SQL. If the target or interpretation is unclear, propose a change for review
+rather than inventing a new doctrine. See [authoring](references/authoring.md) when
+creating or repairing context from notes or extracted metadata.
 
 ```sh
 dal --repository /path/to/context validate

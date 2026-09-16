@@ -6,7 +6,7 @@ import argparse
 from pathlib import Path
 
 from dal.application import BundleCatalog, CatalogService, RESOURCE_KINDS
-from dal.application.models import SearchOptions
+from dal.application.models import DEFAULT_TOKEN_BUDGET, SearchOptions
 
 from .contracts import CommandOutcome
 
@@ -29,17 +29,28 @@ def register(commands) -> None:
         listing.add_argument("--limit", type=int, default=20)
         listing.add_argument("--offset", type=int, default=0)
         listing.add_argument("--include-deprecated", action="store_true")
+        if kind == "column":
+            listing.add_argument("--table", help="Only columns belonging to this table ID.")
         listing.set_defaults(handler=run_resource)
         get = actions.add_parser("get", help=f"Get one {kind} resource.")
         get.add_argument("id")
+        if kind == "table":
+            get.add_argument("--columns-limit", type=int, default=20)
+            get.add_argument("--columns-offset", type=int, default=0)
         get.set_defaults(handler=run_resource)
         for action in ("neighbors", "evidence"):
             context = actions.add_parser(action, help=f"Read {action} for one {kind}.")
             context.add_argument("id")
             context.add_argument("--limit", type=int, default=20)
+            if action == "evidence":
+                context.add_argument("--claim", help="Exact claim path, for example /description.")
+                if kind == "table":
+                    context.add_argument("--column", help="Evidence for one column ID belonging to this table.")
             context.set_defaults(handler=run_resource)
         typed_search = actions.add_parser("search", help=f"Search {kind} resources.")
         _search_arguments(typed_search)
+        if kind == "column":
+            typed_search.add_argument("--table", help="Search only columns belonging to this table ID.")
         typed_search.set_defaults(handler=run_resource)
 
 
@@ -59,13 +70,15 @@ def run_resource(arguments: argparse.Namespace) -> CommandOutcome:
     service = _service(arguments)
     kind = arguments.command.replace("-", "_")
     if arguments.action == "list":
-        results = service.list(kind, limit=arguments.limit, offset=arguments.offset, include_deprecated=arguments.include_deprecated)
+        results = service.list(kind, limit=arguments.limit, offset=arguments.offset, include_deprecated=arguments.include_deprecated,
+                               parent_id=getattr(arguments, "table", None))
         return CommandOutcome({
             "kind": kind, "results": results,
             "limit": arguments.limit, "offset": arguments.offset,
         })
     if arguments.action == "get":
-        result = service.get(kind, arguments.id)
+        result = (service.table_detail(arguments.id, limit=arguments.columns_limit, offset=arguments.columns_offset)
+                  if kind == "table" else service.get(kind, arguments.id))
         if result is None:
             return CommandOutcome(
                 {"error": "resource not found", "id": arguments.id, "kind": kind}, 1,
@@ -74,11 +87,14 @@ def run_resource(arguments: argparse.Namespace) -> CommandOutcome:
     if arguments.action in {"neighbors", "evidence"}:
         if service.get(kind, arguments.id) is None:
             return CommandOutcome({"object_id": arguments.id, arguments.action: []})
-        values = getattr(service, arguments.action)(arguments.id, limit=arguments.limit)
+        values = (service.evidence(arguments.id, limit=arguments.limit,
+                                   column_id=getattr(arguments, "column", None), claim_path=arguments.claim)
+                  if arguments.action == "evidence" else service.neighbors(arguments.id, limit=arguments.limit))
         return CommandOutcome({"object_id": arguments.id, arguments.action: values})
     result = service.search_kind(
         kind, arguments.query, weights=_weights(arguments.weight),
         options=SearchOptions(token_budget=arguments.token_budget, include_deprecated=arguments.include_deprecated),
+        parent_id=getattr(arguments, "table", None),
     )
     return CommandOutcome(result)
 
@@ -94,7 +110,7 @@ def _search_arguments(parser: argparse.ArgumentParser) -> None:
         "--weight", action="append", default=[], metavar="NAME=VALUE",
         help="Override lexical, embedding, graph, evidence, or publication weight.",
     )
-    parser.add_argument("--token-budget", type=int, default=1_600, help="Maximum estimated tokens (UTF-8 bytes / 4); minimum 400.")
+    parser.add_argument("--token-budget", type=int, default=DEFAULT_TOKEN_BUDGET, help="Maximum estimated output tokens (UTF-8 bytes / 4); default 3200, minimum 400 for explicitly compact lookups.")
     parser.add_argument("--include-deprecated", action="store_true")
 
 

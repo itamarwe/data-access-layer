@@ -14,7 +14,7 @@ def test_search_returns_bounded_progressive_context(tmp_path):
     response = _service(tmp_path).search("How many orders?")
 
     assert response.start_with is not None
-    assert response.estimated_tokens <= 1600
+    assert response.estimated_tokens <= 3200
     assert any(item.object.id == "urn:dal:gold_query:orders" for item in response.results)
     assert len(response.next_commands) <= 2
     assert response.omissions.total_matches >= len(response.results)

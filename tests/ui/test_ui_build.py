@@ -20,7 +20,7 @@ def test_visual_contract_uses_ledger_palette_and_responsive_accessibility():
     html = (WEB / "src" / "index.html").read_text(encoding="utf-8")
     css = (WEB / "src" / "styles.css").read_text(encoding="utf-8").lower()
 
-    for label in ("Search", "Catalog", "Curation", "Doctrine", "Gold queries", "Health"):
+    for label in ("Search", "Catalog", "Ontology", "Curation", "Doctrine", "Gold queries", "Health"):
         assert f">{label}" in html
     for color in ("#172129", "#f7f8f4", "#18735a", "#d68a22", "#b94040", "#d7ddd8"):
         assert color in css
@@ -43,3 +43,6 @@ def test_server_supports_ui_deep_links_and_static_assets(tmp_path):
     assert "Context trail" in asset.text
     assert missing_api.status_code == 404
     assert missing_api.headers["content-type"].startswith("application/json")
+    assert client.get("/ontology?kind=entity").status_code == 200
+    for asset_name in ("views/resource.js", "views/proposal.js", "lib/format.js", "lib/resources.js"):
+        assert client.get(f"/assets/{asset_name}").status_code == 200

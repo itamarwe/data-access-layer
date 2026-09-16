@@ -44,6 +44,7 @@ def register(commands) -> None:
 
 
 def run(arguments: argparse.Namespace) -> CommandOutcome:
+    root = Path(arguments.repository)
     physical = (
         LocalPhysicalCatalog(arguments.physical_catalog)
         if arguments.physical_catalog else None
@@ -52,7 +53,8 @@ def run(arguments: argparse.Namespace) -> CommandOutcome:
         ActiveBundle(
             Path(arguments.active_bundle), arguments.expected_bundle_revision,
         )
-        if arguments.active_bundle else None
+        if arguments.active_bundle else
+        ActiveBundle(root / ".dal" / "query") if (root / ".dal" / "query" / "active.json").is_file() else None
     )
     request = HealthRequest(
         repository_root=Path(arguments.repository),
@@ -65,7 +67,7 @@ def run(arguments: argparse.Namespace) -> CommandOutcome:
         active_bundle=bundle,
         evidence_directory=(
             Path(arguments.evidence_directory)
-            if arguments.evidence_directory else None
+            if arguments.evidence_directory else root / "evidence" if (root / "evidence").is_dir() else None
         ),
     )
     result = inspect_health(request)
