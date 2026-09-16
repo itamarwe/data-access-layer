@@ -10,3 +10,4 @@ output/
 graph/
 evals/_artifacts/
 .mcp.json
+*.tgz
