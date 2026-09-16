@@ -35,8 +35,7 @@ compiler edge names.
 Existing files from the earlier native importer may contain reversed
 column.bindings references. Move each reference to the semantic object's bindings
 array, pointing back to the column, then remove the column's bindings field.
-Reimporting the original archive into a fresh repository also produces the corrected
-direction. Do not overwrite an existing curated repository with a fresh import.
+Do not overwrite an existing curated repository with a fresh import.
 Rebuild after changing the files; compiler 2.1 creates a fresh cache when upgrading.
 
 Search's former relationships array is replaced by grouped connections; neighbor
@@ -105,9 +104,9 @@ The server uses local binding by default. Remote binding requires explicit opt-i
 
 ## Migration and deliberate limits
 
-The Legacy ZIP and old DAL graph directories are accepted by explicit import commands. Unresolved endpoints, unreviewed proposals, and speculative questions are reported rather than silently published. The importer is the only compatibility boundary; no old runtime runs alongside the new one.
+Native DAL JSON/YAML documents and former DAL JSON graph exports (files or directories) are accepted by the import command. Unsupported nodes and missing join endpoints in former DAL exports are reported rather than silently published. Custom DuckDB catalogs and ZIP archives are not supported. The importer is the only compatibility boundary; no old runtime runs alongside the new one.
 
-The branch is a replacement, not an assertion of feature parity with every old graph algorithm. Sketch collection, old investigation workflows, and automatic discovery/community jobs are not copied into the native core. Physical measurements from the archive are preserved as evidence; collecting new sketches can be added behind the collector boundary.
+The branch is a replacement, not an assertion of feature parity with every old graph algorithm. Sketch collection, old investigation workflows, and automatic discovery/community jobs are not copied into the native core. Collecting new sketches can be added behind the collector boundary.
 
 Automatic ablation gating, a scheduled build daemon, live-model benchmark accuracy, enterprise access controls, and warehouse-specific query execution are not claimed as completed features. Independent controlled SQL evaluation and context ablation are implemented separately.
 

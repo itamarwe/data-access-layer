@@ -14,22 +14,17 @@ from .serialization import dumps
 
 
 def register(commands):
-    command = commands.add_parser("import", help="Import an Legacy archive, old graph, or native document.")
+    command = commands.add_parser("import", help="Import a native JSON/YAML document or former DAL JSON graph.")
     command.add_argument("input", type=Path)
     command.add_argument("--name", default="imported")
     command.set_defaults(handler=run)
 
 
 def _convert(path, name):
-    from dal.legacy import LegacyArchiveImporter, LegacyCatalogImporter, LegacyGraphImporter
-    from dal.legacy.catalog import CatalogImport
-    from dal.evidence import LegacyEvidenceExtractor
+    from dal.legacy import CatalogImport, LegacyGraphImporter
 
-    if path.suffix.lower() == ".zip":
-        return LegacyArchiveImporter(path).convert(name, include_evidence=True)
-    if path.suffix.lower() == ".duckdb":
-        records = tuple(LegacyEvidenceExtractor(path).records())
-        return LegacyCatalogImporter(path).convert(name, evidence=records)
+    if path.suffix.lower() in {".zip", ".duckdb"}:
+        raise ValueError("DuckDB and ZIP imports are not supported. Import a native DAL JSON/YAML document instead.")
     if path.is_file():
         value = read_document(str(path))
         if value.get("version") == 1 and isinstance(value.get("objects"), list):

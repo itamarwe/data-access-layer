@@ -8,7 +8,7 @@ from dal.evidence import SourceKind, content_digest
 from dal.collectors.types import claim
 from dal.identity import stable_id
 
-from .catalog import CatalogImport, ImportDiagnostic
+from .models import CatalogImport, ImportDiagnostic
 from .values import publication
 
 
