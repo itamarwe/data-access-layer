@@ -4,18 +4,34 @@ Give an AI agent the organizational context it needs to query data correctly, wi
 
 There is one native model, one compiler, and one application service shared by the CLI, REST API, browser UI, and MCP. Legacy archives are supported through an explicit one-way importer. The examples and evaluation fixtures are synthetic.
 
+## Install the agent skill
+
+With Node.js/npm installed, run this from your agent project's directory:
+
+```sh
+npx skills add itamarwe/data-access-layer --skill dal
+```
+
+The installer lets you choose a supported agent. To target Codex directly, add `--agent codex --yes`. See the [skill instructions](skills/dal/SKILL.md).
+
+The skill teaches your agent to discover relevant context, follow useful next steps, check evidence and join requirements, and maintain the graph when asked. It installs **agent instructions**, not the Python runtime, embedding models, or credentials. Install the runtime below and tell your agent which context repository to use.
+
 ## Run it
 
 Requires Python 3.11 or newer.
 
 ```sh
+git clone https://github.com/itamarwe/data-access-layer.git
+cd data-access-layer
+python3 -m venv .venv
+. .venv/bin/activate
 python -m pip install -e '.[dev]'
 dal --repository examples/shop build
 dal --repository examples/shop search "orders by customer"
 dal --repository examples/shop serve
 ```
 
-Open http://127.0.0.1:8765 for the UI; /api/docs contains the REST API reference. The server is local by default. Exposing it on another interface requires explicit remote access and a bearer token; use TLS at your reverse proxy.
+On Windows, activate `.venv\Scripts\Activate.ps1` in PowerShell instead. Open [the local UI](http://127.0.0.1:8765); `/api/docs` contains the REST API reference. The server is local by default. Exposing it on another interface requires explicit remote access and a bearer token; use TLS at your reverse proxy.
 
 For a new graph:
 
@@ -28,6 +44,24 @@ dal --repository /path/to/context search "customer retention" --token-budget 160
 ```
 
 The importer never overwrites conflicting authored objects. Its report identifies missing references and unreviewed material that was not published. Original archives are never modified or committed.
+
+## UI
+
+Actual screenshots of the bundled UI using the synthetic `examples/shop` graph.
+
+Search returns a recommended starting point and suggested next commands within an estimated context budget.
+
+![Search results for orders by customer, with a gold query and next commands](docs/images/ui-search.png)
+
+The catalog separates data joins, business relations, and ontology mappings.
+
+![Orders table with grain, data joins, mappings, and resource navigation](docs/images/ui-catalog.png)
+
+Health distinguishes local checks from source checks that have not run.
+
+![Health dashboard showing local checks and source checks marked not checked](docs/images/ui-health.png)
+
+To reproduce: build and serve `examples/shop`, search for `orders by customer`, open **Catalog → Tables → orders**, then **Health**.
 
 ## Files are the source of truth
 
@@ -74,6 +108,32 @@ Proposals change fields relative to a stable resource ID, not array positions. P
 A new object is proposed with `object: {id, kind, name, ...}`. An edit uses `patch: [{op: add, path: /description, value: ...}]`. Obtain the current revision from `dal proposal list`; supply it as `--expected-revision`. REST writes use the same value in `If-Match`.
 
 `dal build --refresh source-snapshot.json` imports captured Glue/Athena facts before building. Live collectors are read-only Python functions with bounded, injected clients; source changes do not silently erase curated descriptions, grain, filters, or ontology bindings. See [architecture](docs/architecture/simplified-context-graph.md) for the snapshot contract and limitations.
+
+## Benchmarks
+
+Run the synthetic retrieval benchmark from the installed source checkout; no warehouse, hosted model, or credentials are needed:
+
+```sh
+python -m evals.context_graph.benchmark --output output/benchmark.json
+```
+
+Compare BM25 with real local embeddings:
+
+```sh
+python -m pip install -e '.[dev,embeddings]'
+python -m evals.context_graph.benchmark --search both --output output/benchmark.json
+```
+
+The first hybrid run may download model weights. Add `--local-files-only` to require cached weights. `npm run benchmark -- --search both` runs the same benchmark.
+
+The [recorded run](evals/results/synthetic-retrieval.json) on September 16, 2026 used five questions, 17 synthetic objects, and a 1,600 estimated-token budget per question:
+
+| Retrieval | Successful within budget | Mean estimated tokens | Search calls per question |
+| --- | ---: | ---: | ---: |
+| BM25 | 5/5 | 1,452.6 | 1 |
+| BM25 + local embeddings | 5/5 | 1,424.2 | 1 |
+
+These are small development retrieval checks, **not live-agent SQL accuracy or evidence that hybrid search is universally better**. The JSON includes per-question results, latency, build/model-load timings, and environment details. See [benchmark instructions](evals/README.md) for scoring, budget experiments, SQL correctness controls, and ablation tests.
 
 ## Verification
 

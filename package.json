@@ -2,6 +2,7 @@
   "name": "dal-context-graph",
   "private": true,
   "scripts": {
+    "benchmark": "python -m evals.context_graph.benchmark",
     "build": "npm --prefix web run build",
     "dev": "python -m dal.cli --repository examples/shop serve"
   }

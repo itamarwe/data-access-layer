@@ -1,0 +1,210 @@
+{
+  "format": "dal.synthetic-retrieval-benchmark.v1",
+  "generated_at": "2026-09-16T08:51:33.555796+00:00",
+  "split": "development",
+  "fixture": "synthetic-library",
+  "fixture_sha256": "ad378f2b71e34be74ffa33c733d7a5d8a0520630949ac5d59e12694e49e26da3",
+  "object_count": 17,
+  "token_measurement": "estimated_utf8_bytes_divided_by_four",
+  "latency_scope": "search calls in fixture order, including first-query cost; model load and build reported separately",
+  "environment": {
+    "python": "3.13.2",
+    "platform": "macOS-26.5.1-arm64-arm-64bit-Mach-O"
+  },
+  "variants": [
+    {
+      "variant": "bm25",
+      "results": [
+        {
+          "case_id": "ontology-member-identity",
+          "success": true,
+          "within_budget": true,
+          "recall": 1.0,
+          "turns": 1,
+          "input_tokens": 20,
+          "output_tokens": 1408,
+          "total_tokens": 1428,
+          "latency_ms": 83.81391701102257,
+          "embedding_available": false,
+          "degradation_reason": "embedding_index_empty"
+        },
+        {
+          "case_id": "relation-loan-member",
+          "success": true,
+          "within_budget": true,
+          "recall": 1.0,
+          "turns": 1,
+          "input_tokens": 13,
+          "output_tokens": 1434,
+          "total_tokens": 1447,
+          "latency_ms": 84.73608297109604,
+          "embedding_available": false,
+          "degradation_reason": "embedding_index_empty"
+        },
+        {
+          "case_id": "how-to-query-active-loans",
+          "success": true,
+          "within_budget": true,
+          "recall": 1.0,
+          "turns": 1,
+          "input_tokens": 18,
+          "output_tokens": 1430,
+          "total_tokens": 1448,
+          "latency_ms": 84.17899999022484,
+          "embedding_available": false,
+          "degradation_reason": "embedding_index_empty"
+        },
+        {
+          "case_id": "freshness-loans",
+          "success": true,
+          "within_budget": true,
+          "recall": 1.0,
+          "turns": 1,
+          "input_tokens": 15,
+          "output_tokens": 1458,
+          "total_tokens": 1473,
+          "latency_ms": 84.783999979496,
+          "embedding_available": false,
+          "degradation_reason": "embedding_index_empty"
+        },
+        {
+          "case_id": "next-step-book-title",
+          "success": true,
+          "within_budget": true,
+          "recall": 1.0,
+          "turns": 1,
+          "input_tokens": 18,
+          "output_tokens": 1449,
+          "total_tokens": 1467,
+          "latency_ms": 86.0949999988079,
+          "embedding_available": false,
+          "degradation_reason": "embedding_index_empty"
+        }
+      ],
+      "summary": {
+        "cases": 5,
+        "success_rate": 1.0,
+        "success_at_budget_rate": 1.0,
+        "mean_recall": 1.0,
+        "mean_turns": 1.0,
+        "mean_input_tokens": 16.8,
+        "mean_output_tokens": 1435.8,
+        "mean_tokens": 1452.6,
+        "mean_latency_ms": 84.72159999012948,
+        "p95_latency_ms": 86.0949999988079,
+        "degraded_search_rate": 1.0
+      },
+      "evaluation_type": "retrieval_regression",
+      "token_budget": 1600,
+      "embedding_model": null,
+      "model_load_seconds": 2.500019036233425e-07,
+      "build_seconds": 0.34274212500895374,
+      "gate": {
+        "minimum_success_at_budget_rate": 1.0,
+        "minimum_mean_recall": 1.0,
+        "maximum_mean_turns": 1.0,
+        "maximum_mean_tokens": 1600,
+        "maximum_p95_latency_ms": null
+      },
+      "gate_passed": true,
+      "gate_failures": []
+    },
+    {
+      "variant": "hybrid",
+      "results": [
+        {
+          "case_id": "ontology-member-identity",
+          "success": true,
+          "within_budget": true,
+          "recall": 1.0,
+          "turns": 1,
+          "input_tokens": 20,
+          "output_tokens": 1450,
+          "total_tokens": 1470,
+          "latency_ms": 94.34295800328255,
+          "embedding_available": true,
+          "degradation_reason": null
+        },
+        {
+          "case_id": "relation-loan-member",
+          "success": true,
+          "within_budget": true,
+          "recall": 1.0,
+          "turns": 1,
+          "input_tokens": 13,
+          "output_tokens": 1445,
+          "total_tokens": 1458,
+          "latency_ms": 92.4163329899311,
+          "embedding_available": true,
+          "degradation_reason": null
+        },
+        {
+          "case_id": "how-to-query-active-loans",
+          "success": true,
+          "within_budget": true,
+          "recall": 1.0,
+          "turns": 1,
+          "input_tokens": 18,
+          "output_tokens": 1463,
+          "total_tokens": 1481,
+          "latency_ms": 94.09645798802376,
+          "embedding_available": true,
+          "degradation_reason": null
+        },
+        {
+          "case_id": "freshness-loans",
+          "success": true,
+          "within_budget": true,
+          "recall": 1.0,
+          "turns": 1,
+          "input_tokens": 15,
+          "output_tokens": 1362,
+          "total_tokens": 1377,
+          "latency_ms": 93.25025001168251,
+          "embedding_available": true,
+          "degradation_reason": null
+        },
+        {
+          "case_id": "next-step-book-title",
+          "success": true,
+          "within_budget": true,
+          "recall": 1.0,
+          "turns": 1,
+          "input_tokens": 18,
+          "output_tokens": 1317,
+          "total_tokens": 1335,
+          "latency_ms": 94.84595799446106,
+          "embedding_available": true,
+          "degradation_reason": null
+        }
+      ],
+      "summary": {
+        "cases": 5,
+        "success_rate": 1.0,
+        "success_at_budget_rate": 1.0,
+        "mean_recall": 1.0,
+        "mean_turns": 1.0,
+        "mean_input_tokens": 16.8,
+        "mean_output_tokens": 1407.4,
+        "mean_tokens": 1424.2,
+        "mean_latency_ms": 93.7903913974762,
+        "p95_latency_ms": 94.84595799446106,
+        "degraded_search_rate": 0.0
+      },
+      "evaluation_type": "retrieval_regression",
+      "token_budget": 1600,
+      "embedding_model": "BAAI/bge-small-en-v1.5",
+      "model_load_seconds": 0.8072515840176493,
+      "build_seconds": 0.2525704170111567,
+      "gate": {
+        "minimum_success_at_budget_rate": 1.0,
+        "minimum_mean_recall": 1.0,
+        "maximum_mean_turns": 1.0,
+        "maximum_mean_tokens": 1600,
+        "maximum_p95_latency_ms": null
+      },
+      "gate_passed": true,
+      "gate_failures": []
+    }
+  ]
+}

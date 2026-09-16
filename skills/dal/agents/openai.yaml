@@ -1,0 +1,4 @@
+interface:
+  display_name: "DAL Context Graph"
+  short_description: "Find and curate context for organizational SQL"
+  default_prompt: "Use $dal to find the tables, joins, and methodology needed to answer my data question."
