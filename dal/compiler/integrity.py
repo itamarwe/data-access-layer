@@ -6,6 +6,8 @@ from pathlib import Path
 
 import duckdb
 
+from dal.database import read_only_connection
+
 
 def file_digest(path: Path) -> str:
     with path.open("rb") as stream:
@@ -23,7 +25,7 @@ def verify_bundle(path: Path, revision: str | None = None) -> dict:
         for name in ("catalog.duckdb", "evidence.json"):
             if checksums.get(name) != file_digest(path / name):
                 raise ValueError(f"bundle checksum mismatch: {name}")
-        with duckdb.connect(str(path / "catalog.duckdb"), read_only=True) as db:
+        with read_only_connection(path / "catalog.duckdb") as db:
             actual = db.execute("SELECT value FROM meta WHERE key='revision'").fetchone()
             if actual is None or actual[0] != manifest["revision"]:
                 raise ValueError("database revision mismatch")
