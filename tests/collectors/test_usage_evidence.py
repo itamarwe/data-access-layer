@@ -83,7 +83,8 @@ def test_refresh_with_repeated_cte_join_builds_and_reuses_evidence(tmp_path, cap
             }}}
             for name, column in (("orders", "customer_id"), ("customers", "id"))
         ],
-        "queries": [{"QueryExecutionId": "query-1", "sql": REPEATED_JOIN}],
+        "queries": [{"QueryExecutionId": identifier, "sql": REPEATED_JOIN}
+                    for identifier in ("query-1", "query-2")],
     }))
     root = tmp_path / "repo"
     args = ["--repository", str(root), "build", "--refresh", str(source)]
@@ -95,7 +96,7 @@ def test_refresh_with_repeated_cte_join_builds_and_reuses_evidence(tmp_path, cap
     before = snapshot.read_bytes()
     records = SnapshotRepository(root / "evidence").get(snapshot.stem)
     assert len({record.record_id for record in records}) == len(records)
-    assert len([record for record in records if record.claim_path == "/usage/join_expression"]) == 1
+    assert len([record for record in records if record.claim_path == "/usage/join_expression"]) == 2
     document = load_document((root / "semantic/collected.yaml").read_text())
     join, = [item for item in document["objects"] if item["kind"] == "join"]
     assert main(["--repository", str(root), "join", "get", join["id"]]) == 0
@@ -105,3 +106,9 @@ def test_refresh_with_repeated_cte_join_builds_and_reuses_evidence(tmp_path, cap
     assert json.loads(capsys.readouterr().out)["revision"] == first["revision"]
     assert list((root / "evidence").glob("*.json")) == snapshots
     assert snapshot.read_bytes() == before
+    assert main(["--repository", str(root), "health", "--now", NOW.isoformat(),
+                 "--evidence-directory", str(root / "evidence"),
+                 "--active-bundle", str(root / ".dal/query")]) == 0
+    health = json.loads(capsys.readouterr().out)
+    assert not health["failures"]
+    assert all(check["performed"] for check in health["checks"] if check["name"] in {"evidence", "bundle"})
