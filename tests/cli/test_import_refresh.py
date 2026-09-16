@@ -1,13 +1,16 @@
 import json
 
+import pytest
+
 from dal.cli.main import main
 from dal.documents import dump_document, load_document
 from tests.application.fixtures import native_document
 
 
-def test_native_import_is_idempotent_and_preserves_authored_changes(tmp_path, capsys):
-    source = tmp_path / "source.json"
-    source.write_text(dump_document(native_document(), "json"))
+@pytest.mark.parametrize("format", ["json", "yaml"])
+def test_native_import_is_idempotent_and_preserves_authored_changes(tmp_path, capsys, format):
+    source = tmp_path / f"source.{format}"
+    source.write_text(dump_document(native_document(), format))
     root = tmp_path / "repo"
     args = ["--repository", str(root), "import", str(source)]
     assert main(args) == 0

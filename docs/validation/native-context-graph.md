@@ -18,7 +18,8 @@ npm --prefix web run build
 ```
 
 Tests cover native-model validation, builds, interrupted-build recovery, evidence,
-proposals, health, CLI, REST API, MCP, UI assets, and legacy-format imports.
+proposals, health, CLI, REST API, MCP, UI assets, native JSON/YAML imports, former
+DAL JSON graph migration, and rejection of unsupported DuckDB/ZIP imports.
 Relationship tests distinguish business relations, data joins, mappings, and
 resource navigation, including composite predicates and outer-join direction.
 

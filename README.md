@@ -2,7 +2,7 @@
 
 Give an AI agent the organizational context it needs to query data correctly, with useful answers in few turns and a bounded response size.
 
-There is one native model, one compiler, and one application service shared by the CLI, REST API, browser UI, and MCP. Legacy archives are supported through an explicit one-way importer. The examples and evaluation fixtures are synthetic.
+There is one native model, one compiler, and one application service shared by the CLI, REST API, browser UI, and MCP. Import native DAL JSON/YAML documents or migrate former DAL JSON graph exports. The examples and evaluation fixtures are synthetic.
 
 ## Install the complete agent skill
 
@@ -53,13 +53,13 @@ For a new graph:
 
 ```sh
 dal --repository /path/to/context init
-dal --repository /path/to/context import /path/to/customer-archive.zip
+dal --repository /path/to/context import /path/to/catalog.yaml
 dal --repository /path/to/context validate
 dal --repository /path/to/context build
 dal --repository /path/to/context search "customer retention" --token-budget 1600
 ```
 
-The importer never overwrites conflicting authored objects. Its report identifies missing references and unreviewed material that was not published. Original archives are never modified or committed.
+The importer never overwrites conflicting authored objects or modifies source files. Migration reports identify unsupported nodes and missing join endpoints in former DAL JSON graph exports. Custom DuckDB catalogs and ZIP archives are not supported.
 
 ## UI
 

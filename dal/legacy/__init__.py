@@ -1,10 +1,8 @@
-"""Read-only migration from Legacy context graph artifacts."""
+"""Read-only migration from former DAL JSON graph exports."""
 
-from .archive import LegacyArchiveImporter
-from .catalog import LegacyCatalogImporter, CatalogImport, ImportDiagnostic
 from .graph import LegacyGraphImporter
+from .models import CatalogImport, ImportDiagnostic
 
 __all__ = (
-    "LegacyArchiveImporter", "LegacyCatalogImporter", "CatalogImport",
-    "ImportDiagnostic", "LegacyGraphImporter",
+    "CatalogImport", "ImportDiagnostic", "LegacyGraphImporter",
 )

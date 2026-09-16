@@ -1,6 +1,5 @@
-"""Evidence records, snapshots, and legacy extraction."""
+"""Evidence records and snapshots."""
 
-from .legacy import LegacyEvidenceExtractor
 from .model import (
     ContentReference, EvidenceLayer, EvidenceRecord, EvidenceSource,
     Measurement, SourceKind, content_digest, stable_record_id,
@@ -9,7 +8,6 @@ from .repository import SnapshotCollisionError, SnapshotRepository, StoredSnapsh
 from .serialization import deserialize_snapshot, serialize_snapshot, snapshot_id
 
 __all__ = (
-    "LegacyEvidenceExtractor",
     "ContentReference",
     "EvidenceLayer",
     "EvidenceRecord",
