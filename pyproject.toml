@@ -1,6 +1,6 @@
 [project]
 name = "dal-context-graph"
-version = "0.5.0"
+version = "0.5.1"
 description = "A file-based context graph for agents: native CLI, REST API, UI, and MCP."
 requires-python = ">=3.11"
 dependencies = [

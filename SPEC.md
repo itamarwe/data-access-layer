@@ -20,7 +20,7 @@ Every resource has `id`, `kind`, and `name`. Optional common fields include desc
 | property | Conceptual attribute, physical bindings, data_type, unit. |
 | relation | Ontology relation with from_id and to_id; optional cardinality and bindings. |
 | metric | expression, grain, required_filters, unit, dialect, relevant object_ids. |
-| doctrine | Methodology prose in content, scoped through object_ids; empty scope is global. |
+| doctrine | Reusable analytical methodology in content; object_ids link its scope, while empty scope makes it globally discoverable. Applicability remains explicit in content. |
 | gold_query | Curated question, sql, dialect, optional parameters and object_ids. |
 
 Grain is optional. When known, describe it with a mapping such as `grain: {description: One row per order}`. Missing grain is a health gap, not a failed build.
@@ -28,6 +28,26 @@ Grain is optional. When known, describe it with a mapping such as `grain: {descr
 A join without a known predicate remains useful evidence of a relationship; the system must not fabricate executable SQL. Physical overlap alone is not proof of a valid business join. SQL execution records and curated queries can supply stronger, specific support.
 
 Missing retrieval matches return empty results, without additional graph-membership states.
+
+### Object facts and methodology
+
+Facts, meanings, and usage constraints belong on the object they describe: use its
+dedicated field, or its description when no dedicated field fits. This applies to
+prose and caveats as well as structured values. Cross-object definitions such as
+join predicates, business relations, and metric formulas still belong on their
+respective objects; the number of referenced tables does not make them doctrine.
+
+Doctrine explains how to choose, combine, or interpret definitions in an analytical
+procedure. It may apply to one object, span several, or be independent of particular
+objects. Empty object_ids express the last case, not an unresolved owner and not
+unconditional applicability. The content states when the method applies, what to
+do, and relevant limitations. Mixed source notes are split into object facts and
+remaining methodology; doctrine references facts instead of duplicating or overriding
+them. Sources and uncertainty remain evidence, and reusable question/SQL examples
+remain gold queries. All use the same curation lifecycle.
+
+See the skill's [authoring rules](skills/dal/references/authoring.md) for placement
+examples and guidance on consolidating existing doctrine.
 
 ## One graph, distinct meanings
 
