@@ -5,7 +5,7 @@ from collections.abc import Mapping
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from dal.evidence import deserialize_snapshot, snapshot_id
+from dal.evidence import EvidenceLayer, deserialize_snapshot, snapshot_id
 from .model import HealthIssue
 
 
@@ -13,7 +13,7 @@ def inspect_evidence(directory: Path, now: datetime, maximum_age: timedelta) -> 
     if not directory.exists():
         return [HealthIssue("EVIDENCE_DIRECTORY_MISSING", str(directory),
             "The configured evidence snapshot directory does not exist.", "dal build --help")]
-    failures, latest = [], {}
+    failures, latest, claims = [], {}, {}
     for path in sorted(directory.glob("*.json")):
         try:
             payload = path.read_bytes()
@@ -28,10 +28,21 @@ def inspect_evidence(directory: Path, now: datetime, maximum_age: timedelta) -> 
             previous = latest.get(key)
             if previous is None or record.collected_at > previous.collected_at:
                 latest[key] = record
+
+            # Usage accumulates across source records (queries, reports, etc.);
+            # distinct events are not competing values of one table property.
+            origin = record.content.uri if record.layer is EvidenceLayer.USAGE else None
+            claim_key = (*key, origin)
+            previous, _ = claims.get(claim_key, (None, False))
+            if previous is None or record.collected_at > previous.collected_at:
+                claims[claim_key] = (record, False)
             elif record.collected_at == previous.collected_at and record.claim_value != previous.claim_value:
-                failures.append(HealthIssue("EVIDENCE_CONFLICT", record.subject_id,
-                    f"Different source values at the same time for {record.claim_path}.",
-                    "Inspect the source records and collect a corrected snapshot."))
+                claims[claim_key] = (previous, True)
+    for record, conflict in claims.values():
+        if conflict:
+            failures.append(HealthIssue("EVIDENCE_CONFLICT", record.subject_id,
+                f"Different source values at the same time for {record.claim_path}.",
+                "Inspect the source records and collect a corrected snapshot."))
     stale = defaultdict(int)
     for record in latest.values():
         claim = record.claim_value
